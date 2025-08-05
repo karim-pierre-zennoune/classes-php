@@ -19,7 +19,7 @@ class User
     {
 
         if (empty(trim($login))) {
-            return null;
+            throw new Exception('login cannot be empty');
         } else {
             $sql = "SELECT id FROM utilisateurs WHERE login = ?";
             if ($stmt = mysqli_prepare($this->mysqli, $sql)) {
@@ -43,7 +43,8 @@ class User
             mysqli_stmt_bind_param($stmt, "sssss", $login, $param_password, $email, $firstname, $lastname);
             $param_password = password_hash($password, PASSWORD_DEFAULT);
             if (!mysqli_stmt_execute($stmt)) {
-                return null;
+                // return null;
+                throw new Exception('Something went wrong');
             }
             mysqli_stmt_close($stmt);
         }
@@ -124,23 +125,44 @@ class User
 
     public function update($login, $password, $email, $firstname, $lastname)
     {
+
+        $sql = "SELECT id FROM utilisateurs WHERE login = ?";
+        if ($stmt = mysqli_prepare($this->mysqli, $sql)) {
+            mysqli_stmt_bind_param($stmt, "s", $login);
+            $login = trim($login);
+            if (mysqli_stmt_execute($stmt)) {
+                mysqli_stmt_store_result($stmt);
+                if (mysqli_stmt_num_rows($stmt) == 1) {
+                    throw new Exception('login already exists');
+                    // return null;
+                }
+            } else {
+                throw new Exception('Something went wrong');
+            }
+            mysqli_stmt_close($stmt);
+        }
+
+
+
+
+
         $param_password = password_hash($password, PASSWORD_DEFAULT);
 
         $sql = "UPDATE utilisateurs SET login = ?, password = ?, email = ?, firstname = ?, lastname = ? WHERE id = ?";
         if ($stmt = mysqli_prepare($this->mysqli, $sql)) {
-            mysqli_stmt_bind_param($stmt, "ssssss", $login, $param_password, $email, $firstname, $lastname, $this->login);
+            mysqli_stmt_bind_param($stmt, "ssssss", $login, $param_password, $email, $firstname, $lastname, $this->id);
             if (!mysqli_stmt_execute($stmt)) {
                 throw new Exception('Could not update user');
             }
             mysqli_stmt_close($stmt);
+            $this->login = $login;
+            $this->email = $email;
+            $this->firstname = $firstname;
+            $this->lastname = $lastname;
         } else {
             throw new Exception('Could not update user');
         }
 
-        $this->login = $login;
-        $this->email = $email;
-        $this->firstname = $firstname;
-        $this->lastname = $lastname;
     }
 
 
@@ -159,10 +181,6 @@ class User
             "lastname" => $this->lastname,
         ];
     }
-
-
-
-
 
     public function getLogin()
     {
