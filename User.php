@@ -106,6 +106,11 @@ class User
     public function disconnect()
     {
         $this->online = false;
+        $this->id = "";
+        $this->login = "";
+        $this->email = "";
+        $this->firstname = "";
+        $this->lastname = "";
     }
 
     public function delete()
@@ -121,6 +126,7 @@ class User
         } else {
             throw new Exception('Unable to execute DELETE instruction');
         }
+        $this->disconnect();
     }
 
     public function update($login, $password, $email, $firstname, $lastname)
